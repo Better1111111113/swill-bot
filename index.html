@@ -2,46 +2,135 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>SWILL TEST</title>
+    <title>SWILL BOT</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; background: #1a1a2e; color: #eee; padding: 16px; }
+        .header { text-align: center; padding: 15px; background: #16213e; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e94560; }
+        .header h1 { font-size: 24px; color: #e94560; }
+        .btn { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-primary { background: #e94560; }
+        .btn-info { background: #0f3460; }
+        .btn-success { background: #16c79a; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #0f3460; border-radius: 10px; background: #16213e; color: white; font-size: 15px; }
+        .hidden { display: none; }
+        .log { background: #16213e; border-radius: 10px; padding: 12px; margin-top: 12px; font-size: 13px; }
+        .log-item { padding: 4px 0; border-bottom: 1px solid #0f3460; }
+        .back-btn { background: transparent; border: 1px solid #aaa; color: #aaa; padding: 8px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 12px; }
+    </style>
 </head>
-<body style="background:#1a1a2e;color:white;padding:20px;font-family:sans-serif;">
-    <h1>🦅 SWILL TEST</h1>
-    <input type="text" id="target" placeholder="@username" style="padding:10px;width:100%;margin:10px 0;background:#0f3460;color:white;border:none;border-radius:8px;">
-    <select id="reason" style="padding:10px;width:100%;margin:10px 0;background:#0f3460;color:white;border:none;border-radius:8px;">
-        <option value="spam">📧 Спам</option>
-        <option value="scam">💀 Мошенничество</option>
-        <option value="impersonation">🎭 Выдача за другого</option>
-    </select>
-    <button onclick="send()" style="padding:15px;width:100%;background:#e94560;color:white;border:none;border-radius:8px;font-size:16px;">🚀 Отправить</button>
-    <div id="log" style="margin-top:15px;font-size:13px;"></div>
+<body>
+    <div class="header">
+        <h1>🦅 SWILL BOT</h1>
+    </div>
+
+    <div id="mainMenu">
+        <button class="btn btn-primary" onclick="showSection('complaint')">🎯 Подать жалобу</button>
+        <button class="btn btn-info" onclick="showSection('track')">📋 Отследить</button>
+        <button class="btn btn-success" onclick="sendAction('buy_stars')">💳 Купить Stars</button>
+    </div>
+
+    <div id="complaintSection" class="hidden">
+        <button class="back-btn" onclick="showSection('main')">◀️ Назад</button>
+        <h2 style="color:#e94560;margin-bottom:12px;">🎯 Новая жалоба</h2>
+        <input type="text" id="targetUsername" placeholder="@username цели">
+        <select id="reason">
+            <option value="spam">📧 Спам</option>
+            <option value="scam">💀 Мошенничество</option>
+            <option value="impersonation">🎭 Выдача за другого</option>
+            <option value="harassment">😡 Преследование</option>
+            <option value="illegal_content">🔞 Запрещённый контент</option>
+            <option value="bot_account">🤖 Бот/Фейк</option>
+        </select>
+        <button class="btn btn-primary" onclick="sendComplaint()">🚀 Отправить</button>
+        <div class="log" id="complaintLog"></div>
+    </div>
+
+    <div id="trackSection" class="hidden">
+        <button class="back-btn" onclick="showSection('main')">◀️ Назад</button>
+        <h2 style="color:#e94560;margin-bottom:12px;">📋 Отследить</h2>
+        <input type="text" id="searchUsername" placeholder="@username для поиска">
+        <button class="btn btn-info" onclick="sendAction('search', document.getElementById('searchUsername').value)">🔍 Поиск</button>
+        <div class="log" id="searchResult"></div>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
         
-        function send() {
-            const target = document.getElementById('target').value.trim();
-            const reason = document.getElementById('reason').value;
-            
-            if (!target) {
-                alert('Введи @username');
+        const BOT_TOKEN = "8841992645:AAE7H9JlWULnxaGg4GE41p7vCivbRJ4jG5Q";
+        const CHAT_ID = null; // Заполнится автоматически
+
+        function showSection(s) {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('complaintSection').classList.add('hidden');
+            document.getElementById('trackSection').classList.add('hidden');
+            if (s === 'main') document.getElementById('mainMenu').classList.remove('hidden');
+            if (s === 'complaint') document.getElementById('complaintSection').classList.remove('hidden');
+            if (s === 'track') document.getElementById('trackSection').classList.remove('hidden');
+        }
+
+        // Получаем chat_id пользователя
+        tg.WebApp.initDataUnsafe?.user?.id;
+
+        async function sendAction(action, extra = '') {
+            const user = tg.initDataUnsafe?.user;
+            if (!user) {
+                alert('Не удалось получить данные пользователя');
                 return;
             }
-            
-            const data = JSON.stringify({
-                action: 'complaint',
-                target: target.replace('@', ''),
-                reason: reason
-            });
-            
-            document.getElementById('log').innerHTML += '<p>📤 Отправляю: ' + data + '</p>';
-            
-            tg.sendData(data);
-            
-            document.getElementById('log').innerHTML += '<p>✅ Данные отправлены в бота</p>';
+
+            let text = '';
+            if (action === 'complaint') {
+                const target = document.getElementById('targetUsername').value.trim();
+                const reason = document.getElementById('reason').value;
+                if (!target) { alert('Введите @username'); return; }
+                text = `/web_complaint ${target.replace('@','')} ${reason}`;
+                document.getElementById('complaintLog').innerHTML += `<div class="log-item">🔄 Отправка на @${target}...</div>`;
+            } else if (action === 'search') {
+                const username = extra.replace('@','').trim();
+                if (!username) { alert('Введите @username'); return; }
+                text = `/web_search ${username}`;
+            } else if (action === 'buy_stars') {
+                text = `/web_buy`;
+            } else if (action === 'stats') {
+                text = `/web_stats`;
+            }
+
+            // Отправляем через Telegram API
+            try {
+                const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: user.id,
+                        text: text
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.ok) {
+                    document.getElementById('complaintLog').innerHTML += `<div class="log-item">✅ Команда отправлена!</div>`;
+                    document.getElementById('targetUsername').value = '';
+                } else {
+                    document.getElementById('complaintLog').innerHTML += `<div class="log-item">❌ Ошибка: ${data.description}</div>`;
+                }
+            } catch (e) {
+                document.getElementById('complaintLog').innerHTML += `<div class="log-item">❌ Ошибка сети: ${e}</div>`;
+            }
         }
+
+        function sendComplaint() {
+            sendAction('complaint');
+        }
+
+        // Главная кнопка
+        tg.MainButton.setText('🔄 ОБНОВИТЬ').show().onClick(function() {
+            sendAction('stats');
+        });
     </script>
 </body>
 </html>
