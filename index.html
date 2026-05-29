@@ -21,15 +21,13 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🦅 SWILL BOT</h1>
-    </div>
+    <div class="header"><h1>🦅 SWILL BOT</h1></div>
 
     <div id="mainMenu">
         <button class="btn btn-primary" onclick="showSection('complaint')">🎯 Подать жалобу</button>
         <button class="btn btn-info" onclick="showSection('track')">📋 Отследить</button>
-        <button class="btn btn-success" onclick="sendToBot('!купить')">💳 Купить Stars</button>
-        <button class="btn btn-info" onclick="sendToBot('!статус')">🔄 Обновить</button>
+        <button class="btn btn-success" onclick="sendCmd('!купить')">💳 Купить Stars</button>
+        <button class="btn btn-info" onclick="sendCmd('!статус')">🔄 Обновить</button>
     </div>
 
     <div id="complaintSection" class="hidden">
@@ -60,8 +58,6 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
-        
-        const BOT_TOKEN = "8841992645:AAE7H9JlWULnxaGg4GE41p7vCivbRJ4jG5Q";
 
         function showSection(s) {
             document.getElementById('mainMenu').classList.add('hidden');
@@ -72,64 +68,41 @@
             if (s === 'track') document.getElementById('trackSection').classList.remove('hidden');
         }
 
-        async function sendToBot(text) {
-            const user = tg.initDataUnsafe?.user;
-            if (!user) {
-                alert('Ошибка: нет данных пользователя');
-                return;
-            }
+        function sendCmd(text) {
+            // Используем sendData (работает через Telegram, а не HTTP)
+            tg.sendData(JSON.stringify({ text: text }));
             
-            try {
-                const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: user.id, text: text })
-                });
-                const data = await resp.json();
-                if (!data.ok) {
-                    alert('Ошибка: ' + data.description);
-                }
-            } catch (e) {
-                alert('Ошибка сети: ' + e);
-            }
+            // И сразу показываем что команда отправлена
+            const log = document.getElementById('complaintLog');
+            if (log) log.innerHTML += `<div class="log-item">✅ ${text} — отправлено</div>`;
         }
 
         function submitComplaint() {
             const target = document.getElementById('targetUsername').value.trim();
             const reason = document.getElementById('reason').value;
-            
-            if (!target) {
-                alert('Введите @username цели');
-                return;
-            }
-            
-            const log = document.getElementById('complaintLog');
-            log.innerHTML += `<div class="log-item">🔄 Отправляю жалобу на ${target}...</div>`;
+            if (!target) { alert('Введите @username'); return; }
             
             const username = target.replace('@', '');
-            sendToBot(`!жалоба ${username} ${reason}`);
+            const log = document.getElementById('complaintLog');
+            log.innerHTML += `<div class="log-item">🔄 Отправляю жалобу на @${username}...</div>`;
             
-            log.innerHTML += `<div class="log-item">✅ Команда отправлена в бота!</div>`;
+            sendCmd(`!жалоба ${username} ${reason}`);
             document.getElementById('targetUsername').value = '';
         }
 
         function searchUser() {
             const username = document.getElementById('searchUsername').value.trim();
-            if (!username) {
-                alert('Введите @username');
-                return;
-            }
+            if (!username) { alert('Введите @username'); return; }
             
             const log = document.getElementById('searchLog');
             log.innerHTML += `<div class="log-item">🔍 Ищу @${username.replace('@','')}...</div>`;
             
-            sendToBot(`!поиск ${username.replace('@','')}`);
+            sendCmd(`!поиск ${username.replace('@','')}`);
             document.getElementById('searchUsername').value = '';
         }
 
         tg.MainButton.setText('🔄 ОБНОВИТЬ').show().onClick(function() {
-            sendToBot('!статус');
+            sendCmd('!статус');
         });
     </script>
 </body>
