@@ -69,30 +69,27 @@
         }
 
         function sendCmd(text) {
-            // Используем sendData (работает через Telegram, а не HTTP)
+            // Используем sendData для отправки в бота
             tg.sendData(JSON.stringify({ text: text }));
-            
-            // И сразу показываем что команда отправлена
-            const log = document.getElementById('complaintLog');
-            if (log) log.innerHTML += `<div class="log-item">✅ ${text} — отправлено</div>`;
         }
 
         function submitComplaint() {
             const target = document.getElementById('targetUsername').value.trim();
             const reason = document.getElementById('reason').value;
-            if (!target) { alert('Введите @username'); return; }
+            if (!target) { tg.showAlert('Введите @username цели'); return; }
             
             const username = target.replace('@', '');
             const log = document.getElementById('complaintLog');
             log.innerHTML += `<div class="log-item">🔄 Отправляю жалобу на @${username}...</div>`;
             
             sendCmd(`!жалоба ${username} ${reason}`);
+            log.innerHTML += `<div class="log-item">✅ Команда отправлена в бота</div>`;
             document.getElementById('targetUsername').value = '';
         }
 
         function searchUser() {
             const username = document.getElementById('searchUsername').value.trim();
-            if (!username) { alert('Введите @username'); return; }
+            if (!username) { tg.showAlert('Введите @username'); return; }
             
             const log = document.getElementById('searchLog');
             log.innerHTML += `<div class="log-item">🔍 Ищу @${username.replace('@','')}...</div>`;
