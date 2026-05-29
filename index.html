@@ -1,293 +1,47 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SWILL BOT</title>
+    <title>SWILL TEST</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            padding: 16px;
-        }
-        .header {
-            text-align: center;
-            padding: 15px;
-            background: linear-gradient(135deg, #16213e, #0f3460);
-            border-radius: 12px;
-            margin-bottom: 16px;
-            border: 1px solid #e94560;
-        }
-        .header h1 { font-size: 24px; color: #e94560; margin-bottom: 4px; }
-        .header .sub { font-size: 12px; color: #aaa; }
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            background: #0f3460;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
-        }
-        .stat-item { text-align: center; }
-        .stat-item .icon { font-size: 28px; }
-        .stat-item .value { font-size: 20px; font-weight: bold; color: #16c79a; }
-        .stat-item .label { font-size: 11px; color: #aaa; margin-top: 2px; }
-        .btn {
-            width: 100%;
-            padding: 14px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-            transition: transform 0.1s;
-        }
-        .btn:active { transform: scale(0.97); }
-        .btn-primary { background: linear-gradient(135deg, #e94560, #c23152); }
-        .btn-success { background: linear-gradient(135deg, #16c79a, #0e9c7a); }
-        .btn-warning { background: linear-gradient(135deg, #f0a500, #c78500); }
-        .btn-info { background: linear-gradient(135deg, #0f3460, #16213e); }
-        .btn-danger { background: linear-gradient(135deg, #c0392b, #962d22); }
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #e94560;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-        .log {
-            background: #16213e;
-            border-radius: 10px;
-            padding: 12px;
-            margin-top: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-size: 13px;
-        }
-        .log-item { 
-            padding: 6px 0; 
-            border-bottom: 1px solid #0f3460; 
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #0f3460;
-            border-radius: 10px;
-            background: #16213e;
-            color: white;
-            font-size: 15px;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #e94560;
-        }
-        .hidden { display: none; }
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .badge-success { background: #16c79a; color: white; }
-        .badge-error { background: #e94560; color: white; }
-        .badge-warning { background: #f0a500; color: white; }
-        .back-btn {
-            background: transparent;
-            border: 1px solid #aaa;
-            color: #aaa;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 12px;
-        }
-    </style>
 </head>
-<body>
-    <div class="header">
-        <h1>🦅 SWILL BOT</h1>
-        <div class="sub">Complaints System v2.0</div>
-    </div>
-
-    <div class="stats" id="stats">
-        <div class="stat-item">
-            <div class="icon">🟢</div>
-            <div class="value" id="accOnline">-</div>
-            <div class="label">Аккаунтов</div>
-        </div>
-        <div class="stat-item">
-            <div class="icon">⚡</div>
-            <div class="value" id="reportsPer">-</div>
-            <div class="label">Жалоб/заказ</div>
-        </div>
-        <div class="stat-item">
-            <div class="icon">💰</div>
-            <div class="value" id="balance">-</div>
-            <div class="label">Баланс</div>
-        </div>
-    </div>
-
-    <!-- Главное меню -->
-    <div id="mainMenu">
-        <button class="btn btn-primary" onclick="showSection('complaint')">🎯 Подать жалобу</button>
-        <button class="btn btn-info" onclick="showSection('track')">📋 Отследить</button>
-        <button class="btn btn-success" onclick="buyStars()">💳 Купить Stars</button>
-        <button class="btn btn-warning" onclick="showSection('support')">📞 Поддержка</button>
-        <button class="btn btn-info" onclick="getStats()">🔄 Обновить статус</button>
-    </div>
-
-    <!-- Подать жалобу -->
-    <div id="complaintSection" class="hidden">
-        <button class="back-btn" onclick="showSection('main')">◀️ Назад</button>
-        <div class="section-title">🎯 Новая жалоба</div>
-        
-        <label>Username цели:</label>
-        <input type="text" id="targetUsername" placeholder="@username">
-        
-        <label>Причина:</label>
-        <select id="reason">
-            <option value="spam">📧 Спам</option>
-            <option value="scam">💀 Мошенничество</option>
-            <option value="impersonation">🎭 Выдача за другого</option>
-            <option value="harassment">😡 Преследование</option>
-            <option value="illegal_content">🔞 Запрещённый контент</option>
-            <option value="bot_account">🤖 Бот/Фейк</option>
-        </select>
-        
-        <button class="btn btn-primary" onclick="sendComplaint()">🚀 Отправить жалобу</button>
-        <div class="log" id="complaintLog"></div>
-    </div>
-
-    <!-- Отследить -->
-    <div id="trackSection" class="hidden">
-        <button class="back-btn" onclick="showSection('main')">◀️ Назад</button>
-        <div class="section-title">📋 Отследить</div>
-        
-        <label>Username для поиска:</label>
-        <input type="text" id="searchUsername" placeholder="@username">
-        
-        <button class="btn btn-info" onclick="searchUser()">🔍 Поиск</button>
-        <button class="btn btn-info" onclick="getTop10()">📋 Топ-10 целей</button>
-        <div class="log" id="searchResult"></div>
-    </div>
-
-    <!-- Поддержка -->
-    <div id="supportSection" class="hidden">
-        <button class="back-btn" onclick="showSection('main')">◀️ Назад</button>
-        <div class="section-title">📞 Поддержка</div>
-        
-        <div class="log">
-            <div class="log-item">📞 Для пополнения баланса обратитесь к администратору.</div>
-            <div class="log-item">🆔 ID: 1801823219</div>
-            <div class="log-item">💬 Опишите ваш вопрос, и администратор свяжется с вами.</div>
-        </div>
-        
-        <button class="btn btn-warning" onclick="tg.openTelegramLink('https://t.me/swill_support')">📱 Написать в поддержку</button>
-    </div>
+<body style="background:#1a1a2e;color:white;padding:20px;font-family:sans-serif;">
+    <h1>🦅 SWILL TEST</h1>
+    <input type="text" id="target" placeholder="@username" style="padding:10px;width:100%;margin:10px 0;background:#0f3460;color:white;border:none;border-radius:8px;">
+    <select id="reason" style="padding:10px;width:100%;margin:10px 0;background:#0f3460;color:white;border:none;border-radius:8px;">
+        <option value="spam">📧 Спам</option>
+        <option value="scam">💀 Мошенничество</option>
+        <option value="impersonation">🎭 Выдача за другого</option>
+    </select>
+    <button onclick="send()" style="padding:15px;width:100%;background:#e94560;color:white;border:none;border-radius:8px;font-size:16px;">🚀 Отправить</button>
+    <div id="log" style="margin-top:15px;font-size:13px;"></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
         
-        // Цвета темы Telegram
-        tg.setHeaderColor('#1a1a2e');
-        tg.setBackgroundColor('#1a1a2e');
-        
-        function showSection(section) {
-            document.getElementById('mainMenu').classList.add('hidden');
-            document.getElementById('complaintSection').classList.add('hidden');
-            document.getElementById('trackSection').classList.add('hidden');
-            document.getElementById('supportSection').classList.add('hidden');
-            
-            if (section === 'main') document.getElementById('mainMenu').classList.remove('hidden');
-            if (section === 'complaint') document.getElementById('complaintSection').classList.remove('hidden');
-            if (section === 'track') document.getElementById('trackSection').classList.remove('hidden');
-            if (section === 'support') document.getElementById('supportSection').classList.remove('hidden');
-        }
-
-        function sendComplaint() {
-            const target = document.getElementById('targetUsername').value.trim();
+        function send() {
+            const target = document.getElementById('target').value.trim();
             const reason = document.getElementById('reason').value;
             
             if (!target) {
-                tg.showAlert('Введите @username цели');
+                alert('Введи @username');
                 return;
             }
-
-            const log = document.getElementById('complaintLog');
-            log.innerHTML += `<div class="log-item">🔄 Отправка жалобы на ${target}...</div>`;
             
-            tg.sendData(JSON.stringify({
+            const data = JSON.stringify({
                 action: 'complaint',
                 target: target.replace('@', ''),
                 reason: reason
-            }));
+            });
             
-            log.innerHTML += `<div class="log-item"><span class="badge badge-success">✅</span> Жалоба отправлена!</div>`;
-            document.getElementById('targetUsername').value = '';
+            document.getElementById('log').innerHTML += '<p>📤 Отправляю: ' + data + '</p>';
             
-            // Закрываем мини-приложение через 1.5 секунды
-            setTimeout(() => {
-                tg.close();
-            }, 1500);
-        }
-
-        function searchUser() {
-            const username = document.getElementById('searchUsername').value.trim();
-            if (!username) {
-                tg.showAlert('Введите @username');
-                return;
-            }
+            tg.sendData(data);
             
-            const log = document.getElementById('searchResult');
-            log.innerHTML += `<div class="log-item">🔍 Поиск @${username.replace('@','')}...</div>`;
-            
-            tg.sendData(JSON.stringify({
-                action: 'search',
-                username: username.replace('@', '')
-            }));
-            
-            document.getElementById('searchUsername').value = '';
+            document.getElementById('log').innerHTML += '<p>✅ Данные отправлены в бота</p>';
         }
-
-        function buyStars() {
-            tg.sendData(JSON.stringify({
-                action: 'buy_stars'
-            }));
-            tg.close();
-        }
-
-        function getStats() {
-            tg.sendData(JSON.stringify({
-                action: 'get_stats'
-            }));
-        }
-
-        function getTop10() {
-            tg.sendData(JSON.stringify({
-                action: 'get_top10'
-            }));
-        }
-
-        // Обработка нажатия главной кнопки
-        tg.MainButton.setText('🔄 ОБНОВИТЬ').show().onClick(function() {
-            getStats();
-        });
-
-        // Загрузка статистики при открытии
-        getStats();
     </script>
 </body>
 </html>
